@@ -19,6 +19,15 @@ void move_camera(float *player_x, float *player_y, float player_angle,
 void handle_collisions(float *player_x, float *player_y, int **map, int map_width, int map_height,
 		                       float move_x, float move_y);
 int parse_map_from_file(const char *filename, int ***map, int *map_width, int *map_height);
+void draw_map(SDL_Renderer *renderer, int **map, int map_width, int map_height, int show_map);
+SDL_Texture *load_texture(SDL_Renderer *renderer, const char *file_path);
+void draw_textured_walls(SDL_Renderer *renderer, SDL_Texture **textures, int **map,
+		int map_width, int map_height, float player_x, float player_y, float player_angle);
+DL_Texture **load_weapon_textures(SDL_Renderer *renderer, const char **file_paths, int num_weapons);
+void draw_weapons(SDL_Renderer *renderer, SDL_Texture **textures, int num_weapons, int current_weapon, int x, int y);
+SDL_Texture **load_enemy_textures(SDL_Renderer *renderer, const char **file_paths, int num_enemies);
+void draw_enemies(SDL_Renderer *renderer, SDL_Texture **textures, SDL_Rect *enemy_positions, int num_enemies);
+void toggle_rain(int *is_raining);
+void draw_rain(SDL_Renderer *renderer, int is_raining, SDL_Rect *rain_drops, int num_drops);
 
 #endif /* MAIN_H */
-
