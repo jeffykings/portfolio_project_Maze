@@ -45,17 +45,16 @@ int parse_map_from_file(const char *filename, int ***map, int *map_width, int *m
 	for (int y = 0; y < height; y++)
 	{
 		if (fgets(buffer, sizeof(buffer), file) != NULL)
-											        {
-													            for (int x = 0; x < width; x++)
-															                {
-																		                temp_map[y][x] = buffer[x] - '0';
-																				            }
-														            }
-										    }
-
-						        fclose(file);
-
-							    *map = temp_map;
-							        return (0);
+		{
+			for (int x = 0; x < width; x++)
+			{
+				temp_map[y][x] = buffer[x] - '0';
+			}
+		}
+	}
+	
+	fclose(file);
+	
+	*map = temp_map;
+	return (0);
 }
-
