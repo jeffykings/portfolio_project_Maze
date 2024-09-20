@@ -8,7 +8,7 @@ SDL_Renderer *gRenderer = NULL;
  * Return: 0 on success, -1 on failure
  */
 
-int initialize_SDL()
+int initialize_SDL(void)
 {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
@@ -30,7 +30,7 @@ int initialize_SDL()
 		fprintf(stderr, "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
 		return (-1);
 	}
-	
+
 	return (0);
 }
 
@@ -38,7 +38,7 @@ int initialize_SDL()
  * close_SDL - Frees resources and closes SDL
  */
 
-void close_SDL()
+void close_SDL(void)
 {
 	SDL_DestroyRenderer(gRenderer);
 	SDL_DestroyWindow(gWindow);
