@@ -11,6 +11,7 @@ void handle_events()
 
 	while (!quit)
 	{
+		const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 		while (SDL_PollEvent(&e) != 0)
 		{
 			if (e.type == SDL_QUIT)
@@ -24,10 +25,12 @@ void handle_events()
 					case SDLK_ESCAPE:
 						quit = 1;
 						break;
-						/** Add more event handling here as needed **/
 				}
 			}
 		}
+
+		/**  Update player position based on keyboard state **/
+		update_player_position(keystate);
 		
 		/*perorm Update screen **/
 		perform_raycasting();

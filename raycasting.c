@@ -5,6 +5,10 @@
 #define TEXTURE_WIDTH 64
 #define TEXTURE_HEIGHT 64
 
+double posX = 22.0, posY = 12.0; /** Player's starting position **/
+double dirX = -1.0, dirY = 0.0; /** Initial direction vector **/
+double planeX = 0.0, planeY = 0.66; /** he 2D raycaster version of camera plane **/
+
 int worldMap[MAP_WIDTH][MAP_HEIGHT] =
 {
 	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -32,10 +36,6 @@ int worldMap[MAP_WIDTH][MAP_HEIGHT] =
 	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
 	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 };
-
-float posX = 22.0, posY = 12.0; /** Player position **/
-float dirX = -1.0, dirY = 0.0; /** Initial direction vector **/
-float planeX = 0.0, planeY = 0.66; /** 2D raycaster version of camera plane **/
 
 /**
  * perform_raycasting - Performs raycasting to render the walls
