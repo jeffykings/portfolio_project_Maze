@@ -17,15 +17,22 @@ void handle_events()
 			{
 				quit = 1;
 			}
+			else if (e.type == SDL_KEYDOWN)
+			{
+				switch (e.key.keysym.sym)
+				{
+					case SDLK_ESCAPE:
+						quit = 1;
+						break;
+						/** Add more event handling here as needed **/
+				}
+			}
 		}
 		
-		/** Clear screen **/
-		SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xFF);
-		SDL_RenderClear(gRenderer);
+		/*perorm Update screen **/
+		perform_raycasting();
 
-		/** Render objects here **/
-
-		/** Update screen **/
+		/** Update the screen with the rendering**/
 		SDL_RenderPresent(gRenderer);
 	}
 }

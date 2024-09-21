@@ -11,8 +11,6 @@ int main(void)
 	if (initialize_SDL() != 0)
 		return (-1);
 
-	perform_raycasting();
-
 	handle_events();
 
 	close_SDL();

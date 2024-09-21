@@ -2,6 +2,8 @@
 #define MAIN_H
 
 #include <SDL2/SDL.h>
+#include <stdlib.h>
+#include <math.h>
 #include <stdio.h>
 
 #define SCREEN_WIDTH 640

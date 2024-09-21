@@ -21,6 +21,7 @@ int initialize_SDL(void)
 	if (gWindow == NULL)
 	{
 		fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+		SDL_Quit();
 		return (-1);
 	}
 
@@ -28,8 +29,12 @@ int initialize_SDL(void)
 	if (gRenderer == NULL)
 	{
 		fprintf(stderr, "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+		SDL_DestroyWindow(gWindow);
+		SDL_Quit();
+
 		return (-1);
 	}
+	SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
 	return (0);
 }

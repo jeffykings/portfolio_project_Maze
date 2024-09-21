@@ -48,6 +48,7 @@ void perform_raycasting(void)
 		float cameraX = 2 * x / (float)SCREEN_WIDTH - 1; /** Camera x-coordinate in camera space **/
 		float rayDirX = dirX + planeX * cameraX;
 		float rayDirY = dirY + planeY * cameraX;
+
 		int mapX = (int)posX;
 		int mapY = (int)posY;
 
@@ -106,7 +107,9 @@ void perform_raycasting(void)
 		
 		else perpWallDist = (mapY - posY + (1 - stepY) / 2) / rayDirY;
 
+
 		int lineHeight = (int)(SCREEN_HEIGHT / perpWallDist);
+
 
 		int drawStart = -lineHeight / 2 + SCREEN_HEIGHT / 2;
 
@@ -116,9 +119,13 @@ void perform_raycasting(void)
 		
 		if (drawEnd >= SCREEN_HEIGHT) drawEnd = SCREEN_HEIGHT - 1;
 
-		SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255);
-		
-		if (side == 1) SDL_SetRenderDrawColor(gRenderer, 127, 0, 0, 255);
+
+		if (side == 0)
+			SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255);
+		else
+			SDL_SetRenderDrawColor(gRenderer, 0, 0, 225, 255);
+
+		 printf("Ray %d: posX=%.2f, posY=%.2f, rayDirX=%.2f, rayDirY=%.2f, mapX=%d, mapY=%d, drawStart=%d, drawEnd=%d\n", x, posX, posY, rayDirX, rayDirY, mapX, mapY, drawStart, drawEnd);
 
 		SDL_RenderDrawLine(gRenderer, x, drawStart, x, drawEnd);
 	}
