@@ -1,6 +1,5 @@
 #include "main.h"
 
-#define MOVE_SPEED 0.05
 #define ROT_SPEED 0.03
 
 /**

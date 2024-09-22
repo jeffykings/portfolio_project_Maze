@@ -129,4 +129,24 @@ void perform_raycasting(void)
 
 		SDL_RenderDrawLine(gRenderer, x, drawStart, x, drawEnd);
 	}
+	draw_grid();
+}
+
+void draw_grid()
+{
+	SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255);
+	
+	/** Draw vertical lines **/
+	for (int x = 0; x < SCREEN_WIDTH; x += 64)
+	{
+		SDL_RenderDrawLine(gRenderer, x, 0, x, SCREEN_HEIGHT);
+	}
+	
+	/** Draw horizontal lines **/
+	for (int y = 0; y < SCREEN_HEIGHT; y += 64)
+	{
+		SDL_RenderDrawLine(gRenderer, 0, y, SCREEN_WIDTH, y);
+	}
+	
+	SDL_RenderPresent(gRenderer);
 }

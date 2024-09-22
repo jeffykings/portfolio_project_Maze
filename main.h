@@ -8,6 +8,7 @@
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
+#define MOVE_SPEED 0.1
 
 extern SDL_Window *gWindow;
 extern SDL_Renderer *gRenderer;
@@ -23,5 +24,6 @@ void close_SDL(void);
 void perform_raycasting(void);
 void handle_events(void);
 void update_player_position(const Uint8 *keystate);
+void draw_grid(void);
 
 #endif /* MAIN_H */
