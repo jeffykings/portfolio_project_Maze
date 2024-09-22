@@ -11,8 +11,13 @@ int main(void)
 	if (initialize_SDL() != 0)
 		return (-1);
 
-	handle_events();
-
+	while (1)
+	{
+		handle_events();
+		const Uint8 *keystate = SDL_GetKeyboardState(NULL);
+		update_player_position(keystate);
+		render_walls();
+	}
 	close_SDL();
 
 	return (0);
