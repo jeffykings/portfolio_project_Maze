@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -25,5 +26,6 @@ void perform_raycasting(void);
 void handle_events(void);
 void update_player_position(const Uint8 *keystate);
 void draw_grid(void);
+int check_collision(double newX, double newY);
 
 #endif /* MAIN_H */

@@ -7,23 +7,23 @@
 void handle_events()
 {
 	SDL_Event e;
-	int quit = 0;
+	bool quit = false;
+	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 
 	while (!quit)
 	{
-		const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 		while (SDL_PollEvent(&e) != 0)
 		{
 			if (e.type == SDL_QUIT)
 			{
-				quit = 1;
+				quit = true;
 			}
 			else if (e.type == SDL_KEYDOWN)
 			{
 				switch (e.key.keysym.sym)
 				{
 					case SDLK_ESCAPE:
-						quit = 1;
+						quit = true;
 						break;
 				}
 			}
@@ -31,6 +31,8 @@ void handle_events()
 
 		/**  Update player position based on keyboard state **/
 		update_player_position(keystate);
+
+		SDL_RenderClear(gRenderer);
 		
 		/*perorm Update screen **/
 		perform_raycasting();
