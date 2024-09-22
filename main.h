@@ -29,5 +29,6 @@ void draw_grid(void);
 int check_collision(double newX, double newY);
 void render_walls(void);
 void draw_map(void);
+void clear_screen(void); /** New function prototype **/
 
 #endif /* MAIN_H */
