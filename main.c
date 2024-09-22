@@ -17,6 +17,8 @@ int main(void)
 		const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 		update_player_position(keystate);
 		render_walls();
+		draw_map();
+		SDL_RenderPresent(gRenderer);
 	}
 	close_SDL();
 

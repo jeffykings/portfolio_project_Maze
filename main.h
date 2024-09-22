@@ -28,5 +28,6 @@ void update_player_position(const Uint8 *keystate);
 void draw_grid(void);
 int check_collision(double newX, double newY);
 void render_walls(void);
+void draw_map(void);
 
 #endif /* MAIN_H */
