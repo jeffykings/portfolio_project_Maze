@@ -1,0 +1,528 @@
+
+ifile name : draw_map.c
+
+#include "main.h"
+
+/**
+ * draw_map - Draws the mini-map on the screen
+ */
+
+void draw_map(void)
+{
+	/** Set mini-map size and scale **/
+	int mapScale = 5;
+	int mapX = 10;
+	int mapY = 10;
+
+	/** Loop through the world map to draw it on the screen **/
+	for (int y = 0; y < 24; y++)
+	{
+		for (int x = 0; x < 24; x++)
+		{
+			/** Choose color based on map value **/
+			if (worldMap[x][y] > 0)
+			{
+				SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255); /** White for walls **/
+			}
+			else
+			{
+				SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255); /** Black for empty space **/
+			}
+
+			/** Draw the map cell **/
+			SDL_Rect cell = {mapX + x * mapScale, mapY + y * mapScale, mapScale, mapScale};
+			SDL_RenderFillRect(gRenderer, &cell);
+		}
+	}
+
+	/** Draw the player on the map **/
+	SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255); /** Red for player **/
+	SDL_Rect player = {mapX + (int)(posX * mapScale) - mapScale / 2, 
+		mapY + (int)(posY * mapScale) - mapScale / 2, 
+		mapScale, mapScale};
+	SDL_RenderFillRect(gRenderer, &player);
+}
+
+filename: events.c
+#include "main.h"
+
+/**
+ * handle_events - Basic event loop to keep the window open
+ */
+
+void handle_events()
+{
+	SDL_Event e;
+	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
+	
+	while (SDL_PollEvent(&e) != 0)
+	{
+		if (e.type == SDL_QUIT)
+		{
+			close_SDL();
+			exit(0);
+		}
+		if (e.type == SDL_KEYDOWN)
+		{
+			if (keystate[SDL_SCANCODE_ESCAPE])
+			{
+				close_SDL();
+				exit(0);
+			}
+		}
+	}
+}
+\n filename: init_player.c
+#include "main.h"
+
+/**
+ * init_player - Initializes the player's position and direction
+ */
+
+void init_player(void)
+{
+	posX = 22.0;
+	posY = 12.0;
+	dirX = -1.0;
+	dirY = 0.0;
+	planeX = 0.0;
+	planeY = 0.66;
+}
+filename: main.c
+#include "main.h"
+
+/**
+ * main - Entry point of the program
+ *
+ * Return: 0 on success, -1 on failure
+ */
+
+int main(void)
+{
+	if (initialize_SDL() != 0)
+		return (-1);
+
+	while (1)
+	{
+		handle_events();
+		const Uint8 *keystate = SDL_GetKeyboardState(NULL);
+		update_player_position(keystate);
+		render_walls();
+		draw_map();
+		SDL_RenderPresent(gRenderer);
+	}
+	close_SDL();
+
+	return (0);
+}
+filename:  main.h
+#ifndef MAIN_H
+#define MAIN_H
+
+#include <SDL2/SDL.h>
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdbool.h>
+
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 480
+#define MOVE_SPEED 0.1
+
+extern SDL_Window *gWindow;
+extern SDL_Renderer *gRenderer;
+extern int worldMap[24][24]; /** World map **/
+
+extern double posX, posY; /** Player position **/
+extern double dirX, dirY; /** Player direction **/
+extern double planeX, planeY; /** Camera plane **/
+
+/* Function prototypes */
+int initialize_SDL(void);
+void close_SDL(void);
+void perform_raycasting(void);
+void handle_events(void);
+void update_player_position(const Uint8 *keystate);
+void draw_grid(void);
+int check_collision(double newX, double newY);
+void render_walls(void);
+void draw_map(void);
+
+#endif /* MAIN_H */
+filename: movement.c
+#include "main.h"
+
+/**
+ * pdate_player_position - Updates the player's position and direction based on input
+ * @keystate: Array representing the state of all keys
+ */
+
+void update_player_position(const Uint8 *keystate)
+{
+	double newX, newY;
+
+	if (keystate[SDL_SCANCODE_W])
+	{
+		newX = posX + dirX * MOVE_SPEED;
+		newY = posY + dirY * MOVE_SPEED;
+		if (!check_collision(newX, posY))
+			posX = newX;
+		if (!check_collision(posX, newY))
+			posY = newY;
+	}
+
+	if (keystate[SDL_SCANCODE_S])
+	{
+		newX = posX - dirX * MOVE_SPEED;
+		newY = posY - dirY * MOVE_SPEED;
+		if (!check_collision(newX, posY))
+			posX = newX;
+		if (!check_collision(posX, newY))
+			posY = newY;
+	}
+
+	if (keystate[SDL_SCANCODE_A])
+	{
+		double oldDirX = dirX;
+		dirX = dirX * cos(-MOVE_SPEED) - dirY * sin(-MOVE_SPEED);
+		dirY = oldDirX * sin(-MOVE_SPEED) + dirY * cos(-MOVE_SPEED);
+		double oldPlaneX = planeX;
+		planeX = planeX * cos(-MOVE_SPEED) - planeY * sin(-MOVE_SPEED);
+		planeY = oldPlaneX * sin(-MOVE_SPEED) + planeY * cos(-MOVE_SPEED);
+	}
+
+	if (keystate[SDL_SCANCODE_D])
+	{
+		double oldDirX = dirX;
+		dirX = dirX * cos(MOVE_SPEED) - dirY * sin(MOVE_SPEED);
+		dirY = oldDirX * sin(MOVE_SPEED) + dirY * cos(MOVE_SPEED);
+		double oldPlaneX = planeX;
+		planeX = planeX * cos(MOVE_SPEED) - planeY * sin(MOVE_SPEED);
+		planeY = oldPlaneX * sin(MOVE_SPEED) + planeY * cos(MOVE_SPEED);
+	}
+}
+
+/**
+ * check_collision - Checks for collisions and prevents movement through walls
+ *
+ * @newX: New X position to be checked
+ * @newY: New Y position to be checked
+ *
+ * Return: 1 if there is a collision, 0 otherwise
+ */
+
+int check_collision(double newX, double newY)
+{
+	if (worldMap[(int)newX][(int)newY] == 1)
+		return (1);
+	return (0);
+}
+filename: raycasting.c
+#include "main.h"
+
+#define MAP_WIDTH 24
+#define MAP_HEIGHT 24
+#define TEXTURE_WIDTH 64
+#define TEXTURE_HEIGHT 64
+
+double posX = 22.0, posY = 12.0; /** Player's starting position **/
+double dirX = -1.0, dirY = 0.0; /** Initial direction vector **/
+double planeX = 0.0, planeY = 0.66; /** he 2D raycaster version of camera plane **/
+
+int worldMap[MAP_WIDTH][MAP_HEIGHT] =
+{
+	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+	{2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
+	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+};
+
+/**
+ * perform_raycasting - Performs raycasting to render the walls
+ */
+
+void perform_raycasting(void)
+{
+	for (int x = 0; x < SCREEN_WIDTH; x++)
+	{
+		float cameraX = 2 * x / (float)SCREEN_WIDTH - 1; /** Camera x-coordinate in camera space **/
+		float rayDirX = dirX + planeX * cameraX;
+		float rayDirY = dirY + planeY * cameraX;
+
+		int mapX = (int)posX;
+		int mapY = (int)posY;
+
+		float sideDistX;
+		float sideDistY;
+
+		float deltaDistX = (rayDirX == 0) ? 1e30 : fabs(1 / rayDirX);
+		float deltaDistY = (rayDirY == 0) ? 1e30 : fabs(1 / rayDirY);
+		float perpWallDist;
+
+		int stepX;
+		int stepY;
+
+		int hit = 0;
+		int side;
+
+		if (rayDirX < 0)
+		{
+			stepX = -1;
+			sideDistX = (posX - mapX) * deltaDistX;
+		}
+		else
+		{
+			stepX = 1;
+			sideDistX = (mapX + 1.0 - posX) * deltaDistX;
+		}
+		if (rayDirY < 0)
+		{
+			stepY = -1;
+			sideDistY = (posY - mapY) * deltaDistY;
+		}
+		else
+		{
+			stepY = 1;
+			sideDistY = (mapY + 1.0 - posY) * deltaDistY;
+		}
+		
+		while (hit == 0)
+		{
+			if (sideDistX < sideDistY)
+			{
+				sideDistX += deltaDistX;
+				mapX += stepX;
+				side = 0;
+			}
+			else
+			{
+				sideDistY += deltaDistY;
+				mapY += stepY;
+				side = 1;
+			}
+			if (worldMap[mapX][mapY] > 0) hit = 1;
+		}
+
+		if (side == 0) perpWallDist = (mapX - posX + (1 - stepX) / 2) / rayDirX;
+		
+		else perpWallDist = (mapY - posY + (1 - stepY) / 2) / rayDirY;
+
+
+		int lineHeight = (int)(SCREEN_HEIGHT / perpWallDist);
+
+
+		int drawStart = -lineHeight / 2 + SCREEN_HEIGHT / 2;
+
+		if (drawStart < 0) drawStart = 0;
+		
+		int drawEnd = lineHeight / 2 + SCREEN_HEIGHT / 2;
+		
+		if (drawEnd >= SCREEN_HEIGHT) drawEnd = SCREEN_HEIGHT - 1;
+
+
+		if (side == 0)
+			SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255);
+		else
+			SDL_SetRenderDrawColor(gRenderer, 0, 0, 225, 255);
+
+		 printf("Ray %d: posX=%.2f, posY=%.2f, rayDirX=%.2f, rayDirY=%.2f, mapX=%d, mapY=%d, drawStart=%d, drawEnd=%d\n", x, posX, posY, rayDirX, rayDirY, mapX, mapY, drawStart, drawEnd);
+
+		SDL_RenderDrawLine(gRenderer, x, drawStart, x, drawEnd);
+	}
+	draw_grid();
+}
+
+void draw_grid()
+{
+	SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255);
+	
+	/** Draw vertical lines **/
+	for (int x = 0; x < SCREEN_WIDTH; x += 64)
+	{
+		SDL_RenderDrawLine(gRenderer, x, 0, x, SCREEN_HEIGHT);
+	}
+	
+	/** Draw horizontal lines **/
+	for (int y = 0; y < SCREEN_HEIGHT; y += 64)
+	{
+		SDL_RenderDrawLine(gRenderer, 0, y, SCREEN_WIDTH, y);
+	}
+	
+	SDL_RenderPresent(gRenderer);
+}
+
+/**
+ * render_walls - Draws the walls based on raycasting results
+ */
+
+void render_walls(void)
+{
+	for (int x = 0; x < SCREEN_WIDTH; x++)
+	{
+	       	/** Perform raycasting calculations for this x-coordinate **/
+	       	/** Calculate ray position and direction **/
+		double cameraX = 2 * x / (double)SCREEN_WIDTH - 1;
+		double rayDirX = dirX + planeX * cameraX;
+		double rayDirY = dirY + planeY * cameraX;
+
+		/** Which box of the map we're in **/
+		int mapX = (int)posX;
+		int mapY = (int)posY;
+
+		/** Length of ray from current position to next x or y-side **/
+		double sideDistX;
+		double sideDistY;
+
+		/** Length of ray from one x or y-side to next x or y-side **/
+		double deltaDistX = fabs(1 / rayDirX);
+		double deltaDistY = fabs(1 / rayDirY);
+		double perpWallDist;
+
+		/** What direction to step in x or y-direction (either +1 or -1) **/
+		int stepX;
+		int stepY;
+
+		int hit = 0; /** Was there a wall hit? **/
+		int side;   /** Was a NS or a EW wall hit? **/
+
+		/** Calculate step and initial sideDist **/
+		if (rayDirX < 0)
+		{
+			stepX = -1;
+			sideDistX = (posX - mapX) * deltaDistX;
+		}
+		else
+		{
+			stepX = 1;
+			sideDistX = (mapX + 1.0 - posX) * deltaDistX;
+		}
+
+		if (rayDirY < 0)
+		{
+			stepY = -1;
+			sideDistY = (posY - mapY) * deltaDistY;
+		}
+		else
+		{
+			stepY = 1;
+			sideDistY = (mapY + 1.0 - posY) * deltaDistY;
+		 }
+
+		/** Perform DDA **/
+		while (hit == 0)
+		{
+			/** Jump to next map square, either in x-direction, or in y-direction **/
+			if (sideDistX < sideDistY)
+			{
+				sideDistX += deltaDistX;
+				mapX += stepX;
+				side = 0;
+			}
+		else
+		{
+			sideDistY += deltaDistY;
+			mapY += stepY;
+			side = 1;
+		}
+		
+		/** Check if ray has hit a wall **/
+		if (worldMap[mapX][mapY] > 0) hit = 1;
+		}
+
+		/** Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!) **/
+		if (side == 0) perpWallDist = (mapX - posX + (1 - stepX) / 2) / rayDirX;
+
+		else perpWallDist = (mapY - posY + (1 - stepY) / 2) / rayDirY;
+
+		/** Calculate height of line to draw on screen **/
+		int lineHeight = (int)(SCREEN_HEIGHT / perpWallDist);
+
+		/** Calculate lowest and highest pixel to fill in current stripe **/
+		int drawStart = -lineHeight / 2 + SCREEN_HEIGHT / 2;
+		if (drawStart < 0) drawStart = 0;
+		
+		int drawEnd = lineHeight / 2 + SCREEN_HEIGHT / 2;
+		if (drawEnd >= SCREEN_HEIGHT) drawEnd = SCREEN_HEIGHT - 1;
+
+		/** Choose wall color **/
+		SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255); /** Red **/
+		if (side == 1) { SDL_SetRenderDrawColor(gRenderer, 128, 0, 0, 255); } /** Dark red for y-side **/
+
+		/** Draw the vertical line representing the wall slice **/
+		SDL_RenderDrawLine(gRenderer, x, drawStart, x, drawEnd);
+	}
+	SDL_RenderPresent(gRenderer);
+}
+filename: window.c 
+#include "main.h"
+
+/** SDL window and renderer **/
+SDL_Window *gWindow = NULL;
+SDL_Renderer *gRenderer = NULL;
+
+/**
+ * initialize_SDL - Initializes SDL
+ *
+ * Return: 0 on success, -1 on failure
+ */
+
+int initialize_SDL(void)
+{
+	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+	{
+		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+		return -1;
+	}
+
+	gWindow = SDL_CreateWindow("3D Maze Game",
+			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+			SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+
+	if (gWindow == NULL)
+	{
+		SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+		SDL_Quit();
+		return -1;
+	}
+
+	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+	if (gRenderer == NULL)
+	{
+		SDL_Log("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+		SDL_DestroyWindow(gWindow);
+		SDL_Quit();
+		return -1;
+	}
+
+	return 0;
+}
+
+/**
+ *  * close_SDL - Shuts down SDL and cleans up resources
+ *   */
+void close_SDL(void)
+{
+	SDL_DestroyRenderer(gRenderer);
+	SDL_DestroyWindow(gWindow);
+	SDL_Quit();
+}
