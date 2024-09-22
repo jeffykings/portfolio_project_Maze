@@ -7,37 +7,22 @@
 void handle_events()
 {
 	SDL_Event e;
-	bool quit = false;
 	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
-
-	while (!quit)
+	
+	while (SDL_PollEvent(&e) != 0)
 	{
-		while (SDL_PollEvent(&e) != 0)
+		if (e.type == SDL_QUIT)
 		{
-			if (e.type == SDL_QUIT)
+			close_SDL();
+			exit(0);
+		}
+		if (e.type == SDL_KEYDOWN)
+		{
+			if (keystate[SDL_SCANCODE_ESCAPE])
 			{
-				quit = true;
-			}
-			else if (e.type == SDL_KEYDOWN)
-			{
-				switch (e.key.keysym.sym)
-				{
-					case SDLK_ESCAPE:
-						quit = true;
-						break;
-				}
+				close_SDL();
+				exit(0);
 			}
 		}
-
-		/**  Update player position based on keyboard state **/
-		update_player_position(keystate);
-
-		SDL_RenderClear(gRenderer);
-		
-		/*perorm Update screen **/
-		perform_raycasting();
-
-		/** Update the screen with the rendering**/
-		SDL_RenderPresent(gRenderer);
 	}
 }
