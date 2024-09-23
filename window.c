@@ -14,7 +14,7 @@ int initialize_SDL(void)
 {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
-		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 		return -1;
 	}
 
@@ -24,18 +24,15 @@ int initialize_SDL(void)
 
 	if (gWindow == NULL)
 	{
-		SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
-		SDL_Quit();
+		printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 		return -1;
 	}
 
 	gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
 	if (gRenderer == NULL)
 	{
-		SDL_Log("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
-		SDL_DestroyWindow(gWindow);
-		SDL_Quit();
-		return -1;
+		printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+		return (-1);
 	}
 
 	return 0;
