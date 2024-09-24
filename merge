@@ -526,3 +526,449 @@ void close_SDL(void)
 	SDL_DestroyWindow(gWindow);
 	SDL_Quit();
 }
+apply_floor_ceiling_textures.c
+#include "main.h"
+
+/**
+ * apply_floor_ceiling_textures - Renders floor and ceiling textures
+ */
+
+void apply_floor_ceiling_textures(void)
+{
+	int y;
+	for (y = 0; y < SCREEN_HEIGHT / 2; y++)
+	{
+		int p = y - SCREEN_HEIGHT / 2;
+		double rowDistance = SCREEN_HEIGHT / (2.0 * y - SCREEN_HEIGHT);
+		double floorX = posX + rowDistance * dirX;
+		double floorY = posY + rowDistance * dirY;
+
+		int cellX = (int)floorX;
+		int cellY = (int)floorY;
+
+		int tx = (int)(64 * (floorX - cellX)) & (64 - 1);
+		int ty = (int)(64 * (floorY - cellY)) & (64 - 1);
+
+		SDL_Rect floorSrc = { tx, ty, 1, 1 };
+		SDL_Rect floorDest = { y, SCREEN_HEIGHT / 2 + p, 1, 1 };
+		SDL_Rect ceilingDest = { y, SCREEN_HEIGHT / 2 - p, 1, 1 };
+
+		SDL_RenderCopy(gRenderer, floorTexture, &floorSrc, &floorDest);
+		SDL_RenderCopy(gRenderer, ceilingTexture, &floorSrc, &ceilingDest);
+	}
+}
+apply_wall_textures.c
+#include "main.h"
+
+/**
+ * apply_wall_textures - Renders wall textures based on raycasting results
+ * @x: The x-coordinate on the screen
+ * @wallHeight: The height of the wall slice to draw
+ * @textureX: The x-coordinate on the texture
+ * @wallType: The type of wall (for different textures)
+ */
+
+void apply_wall_textures(int x, int wallHeight, int textureX, int wallType)
+{
+	SDL_Rect srcRect, destRect;
+
+	srcRect.x = textureX;
+	srcRect.y = 0;
+	srcRect.w = 1;
+	srcRect.h = 64; /** Assuming texture height is 64 **/
+
+	destRect.x = x;
+	destRect.y = (SCREEN_HEIGHT - wallHeight) / 2;
+	destRect.w = 1;
+	destRect.h = wallHeight;
+
+	SDL_Texture *currentTexture = wallTexture; /** Assuming one wall texture **/
+
+	SDL_RenderCopy(gRenderer, currentTexture, &srcRect, &destRect);
+}
+clear_screen.c
+#include "main.h"
+
+/**
+ * clear_screen - Clears the screen to a specified color
+ */
+
+void clear_screen(void)
+{
+	/** Clear screen to black **/
+	SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
+	SDL_RenderClear(gRenderer);
+}
+draw_scene.c
+#include "main.h"
+
+/**
+ * draw_scene - Draws the entire scene including walls, floor, ceiling
+ */
+
+void draw_scene(void)
+{
+	clear_screen();
+	render_floor_ceiling();
+	render_walls();
+	draw_map();
+	SDL_RenderPresent(gRenderer);
+}
+handle_events.c
+#include "main.h"
+
+/**
+ * handle_events - Processes SDL events for user input and window actions
+ */
+
+void handle_events(void)
+{
+	SDL_Event e;
+	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
+
+	while (SDL_PollEvent(&e) != 0)
+	{
+		if (e.type == SDL_QUIT)
+		{
+			exit(0);
+		}
+		else if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
+		{
+			update_player_position(keystate);
+			rotate_camera(keystate);
+			move_camera(keystate);
+		}
+	}
+}
+load_textures.c
+#include "main.h"
+
+/**
+ * load_texture - Loads a texture from a file
+ * @file: The file path of the texture
+ *
+ * Return: The loaded SDL_Texture, or NULL on failure
+ */
+
+SDL_Texture *load_texture(const char *file)
+{
+	SDL_Texture *texture = NULL;
+	SDL_Surface *loadedSurface = SDL_LoadBMP(file);
+
+	if (loadedSurface == NULL)
+	{
+		fprintf(stderr, "Unable to load image %s! SDL Error: %s\n", file, SDL_GetError());
+	}
+	else
+	{
+		texture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
+		if (texture == NULL)
+		{
+			fprintf(stderr, "Unable to create texture from %s! SDL Error: %s\n", file, SDL_GetError());
+		}
+
+		SDL_FreeSurface(loadedSurface);
+	}
+
+	return texture;
+}
+
+/**
+ * load_textures - Loads all necessary textures
+ *
+ * Return: 0 on success, -1 on failure
+ */
+
+int load_textures(void)
+{
+	wallTexture = load_texture("wall.bmp");
+	if (!wallTexture)
+		return (-1);
+
+	floorTexture = load_texture("floor.bmp");
+	if (!floorTexture)
+		return (-1);
+
+	ceilingTexture = load_texture("ceiling.bmp");
+	if (!ceilingTexture)
+		return (-1);
+
+	return (0);
+}
+main.c
+#include "main.h"
+
+SDL_Window *gWindow = NULL;
+SDL_Renderer *gRenderer = NULL;
+SDL_Texture *wallTexture = NULL;
+SDL_Texture *floorTexture = NULL;
+SDL_Texture *ceilingTexture = NULL;
+
+double posX = 22.0, posY = 12.0; /** Player position **/
+double dirX = -1.0, dirY = 0.0;  /** Player direction vector **/
+double planeX = 0.0, planeY = 0.66; /** Camera plane **/
+
+/**
+ * main - Entry point of the program
+ * @argc: Argument count
+ * @argv: Argument vector
+ *
+ * Return: 0 on success, -1 on failure
+ */
+
+int main(int argc, char *argv[])
+{
+	if (argc != 2)
+	{
+		fprintf(stderr, "Usage: %s <map_file>\n", argv[0]);
+		return (-1);
+	}
+
+	if (initialize_SDL() != 0)
+		return (-1);
+
+	if (parse_map(argv[1]) != 0)
+		return (-1);
+
+	  if (load_textures() != 0)
+		  return (-1);
+
+	while (1)
+	{
+		handle_events();
+		const Uint8 *keystate = SDL_GetKeyboardState(NULL);
+		move_camera(keystate); /** Move the camera based on input **/
+		rotate_camera(keystate); /** Rotate the camera based on input **/
+		update_player_position(keystate);
+
+		clear_screen();
+
+		render_walls();
+		draw_map();
+		SDL_RenderPresent(gRenderer);
+	}
+	close_SDL();
+
+	return (0);
+}
+main.h
+#ifndef MAIN_H
+#define MAIN_H
+
+#include <SDL2/SDL.h>
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdbool.h>
+
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 480
+#define MOVE_SPEED 0.1
+
+extern SDL_Window *gWindow;
+extern SDL_Renderer *gRenderer;
+extern int worldMap[24][24]; /** World map **/
+
+extern double posX, posY; /** Player position **/
+extern double dirX, dirY; /** Player direction **/
+extern double planeX, planeY; /** Camera plane **/
+
+/* Function prototypes */
+int initialize_SDL(void);
+void close_SDL(void);
+void perform_raycasting(void);
+void handle_events(void);
+void update_player_position(const Uint8 *keystate);
+void draw_grid(void);
+int check_collision(double newX, double newY);
+void render_walls(void);
+void draw_map(void);
+void clear_screen(void);
+void rotate_camera(const Uint8 *keystate);
+void move_camera(const Uint8 *keystate);
+int parse_map(const char *filename);
+SDL_Texture *load_texture(const char *file);
+int load_textures(void);
+void render_floor_ceiling(void);
+void draw_scene(void);
+int handle_collisions(double newX, double newY);
+void apply_wall_textures(int x, int wallHeight, int textureX, int wallType);
+void apply_floor_ceiling_textures(void);
+
+#endif /* MAIN_H */
+move_camera.c
+#include "main.h"
+
+/**
+ * move_camera - Moves the camera based on keyboard input
+ * @keystate: The current state of the keyboard
+ */
+
+void move_camera(const Uint8 *keystate)
+{
+	double moveSpeed = 0.05; /** Move speed **/
+	double newX, newY;
+
+	if (keystate[SDL_SCANCODE_W])
+	{
+		newX = posX + dirX * moveSpeed;
+		newY = posY + dirY * moveSpeed;
+		if (!check_collision(newX, newY)) /** Check collision **/
+		{
+			posX = newX;
+			posY = newY;
+		}
+	}
+	if (keystate[SDL_SCANCODE_S])
+	{
+		newX = posX - dirX * moveSpeed;
+		newY = posY - dirY * moveSpeed;
+		if (!check_collision(newX, newY)) /** Check collision **/
+		{
+			posX = newX;
+			posY = newY;
+		}
+	}
+	if (keystate[SDL_SCANCODE_A])
+	{
+		newX = posX - planeX * moveSpeed;
+		newY = posY - planeY * moveSpeed;
+		if (!check_collision(newX, newY)) /** Check collision **/
+		{
+			posX = newX;
+			posY = newY;
+		}
+	}
+	if (keystate[SDL_SCANCODE_D])
+	{
+		newX = posX + planeX * moveSpeed;
+		newY = posY + planeY * moveSpeed;
+		if (!check_collision(newX, newY)) /** Check collision **/
+		{
+			posX = newX;
+			posY = newY;
+		}
+	}
+}
+parse_map.c
+#include "main.h"
+
+/**
+ * parse_map - Parses the map from a file and populates the worldMap array
+ * @filename: The name of the file containing the map
+ *
+ * Return: 0 on success, -1 on failure
+ */
+
+int parse_map(const char *filename)
+{
+	FILE *file;
+	int x, y;
+	char line[25];
+
+	file = fopen(filename, "r");
+	if (!file)
+	{
+		fprintf(stderr, "Error: Could not open map file %s\n", filename);
+		return (-1);
+	}
+
+	for (y = 0; y < 24; y++)
+	{
+		if (fgets(line, sizeof(line), file))
+		{
+			for (x = 0; x < 24; x++)
+			{
+				if (line[x] >= '0' && line[x] <= '9')
+					worldMap[y][x] = line[x] - '0';
+				else
+					worldMap[y][x] = 0;
+			}
+		}
+	}
+	fclose(file);
+	return (0);
+}
+render_floor_ceiling.c
+#include "main.h"
+
+/**
+ * render_floor_ceiling - Renders the floor and ceiling using textures
+ */
+
+void render_floor_ceiling(void)
+{
+	int y;
+	for (y = 0; y < SCREEN_HEIGHT; y++)
+	{
+		double rayDirX0 = dirX - planeX;
+		double rayDirY0 = dirY - planeY;
+		double rayDirX1 = dirX + planeX;
+		double rayDirY1 = dirY + planeY;
+
+		int p = y - SCREEN_HEIGHT / 2;
+		double posZ = 0.5 * SCREEN_HEIGHT;
+
+		double rowDistance = posZ / p;
+
+		double floorStepX = rowDistance * (rayDirX1 - rayDirX0) / SCREEN_WIDTH;
+		double floorStepY = rowDistance * (rayDirY1 - rayDirY0) / SCREEN_WIDTH;
+
+		double floorX = posX + rowDistance * rayDirX0;
+		double floorY = posY + rowDistance * rayDirY0;
+
+		int x;
+		for (x = 0; x < SCREEN_WIDTH; x++)
+		{
+			int cellX = (int)floorX;
+			int cellY = (int)floorY;
+
+			int tx = (int)(64 * (floorX - cellX)) & (64 - 1);
+			int ty = (int)(64 * (floorY - cellY)) & (64 - 1);
+
+			floorX += floorStepX;
+			floorY += floorStepY;
+
+			SDL_Rect floorRect = {x, y + SCREEN_HEIGHT / 2, 1, 1};
+			SDL_Rect ceilingRect = {x, SCREEN_HEIGHT / 2 - y - 1, 1, 1};
+
+			SDL_RenderCopy(gRenderer, floorTexture, NULL, &floorRect);
+			SDL_RenderCopy(gRenderer, ceilingTexture, NULL, &ceilingRect);
+		}
+	}
+}
+rotate_camera.c
+#include "main.h"
+
+/**
+ * rotate_camera - Rotates the camera based on keyboard input
+ * @keystate: The current state of the keyboard
+ */
+
+void rotate_camera(const Uint8 *keystate)
+{
+	double oldDirX, oldPlaneX;
+	double rotSpeed = 0.05; /** Rotation speed **/
+
+	if (keystate[SDL_SCANCODE_LEFT])
+	{
+		/** Rotate to the left **/
+		oldDirX = dirX;
+		dirX = dirX * cos(rotSpeed) - dirY * sin(rotSpeed);
+		dirY = oldDirX * sin(rotSpeed) + dirY * cos(rotSpeed);
+		oldPlaneX = planeX;
+		planeX = planeX * cos(rotSpeed) - planeY * sin(rotSpeed);
+		planeY = oldPlaneX * sin(rotSpeed) + planeY * cos(rotSpeed);
+	}
+
+	if (keystate[SDL_SCANCODE_RIGHT])
+	{
+		/** Rotate to the right **/
+		oldDirX = dirX;
+		dirX = dirX * cos(-rotSpeed) - dirY * sin(-rotSpeed);
+		dirY = oldDirX * sin(-rotSpeed) + dirY * cos(-rotSpeed);
+		oldPlaneX = planeX;
+		planeX = planeX * cos(-rotSpeed) - planeY * sin(-rotSpeed);
+		planeY = oldPlaneX * sin(-rotSpeed) + planeY * cos(-rotSpeed);
+	}
+}

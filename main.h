@@ -29,6 +29,16 @@ void draw_grid(void);
 int check_collision(double newX, double newY);
 void render_walls(void);
 void draw_map(void);
-void clear_screen(void); /** New function prototype **/
+void clear_screen(void);
+void rotate_camera(const Uint8 *keystate);
+void move_camera(const Uint8 *keystate);
+int parse_map(const char *filename);
+SDL_Texture *load_texture(const char *file);
+int load_textures(void);
+void render_floor_ceiling(void);
+void draw_scene(void);
+int handle_collisions(double newX, double newY);
+void apply_wall_textures(int x, int wallHeight, int textureX, int wallType);
+void apply_floor_ceiling_textures(void);
 
 #endif /* MAIN_H */

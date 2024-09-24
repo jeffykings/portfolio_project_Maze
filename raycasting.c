@@ -43,6 +43,7 @@ int worldMap[MAP_WIDTH][MAP_HEIGHT] =
 
 void perform_raycasting(void)
 {
+
 	for (int x = 0; x < SCREEN_WIDTH; x++)
 	{
 		float cameraX = 2 * x / (float)SCREEN_WIDTH - 1; /** Camera x-coordinate in camera space **/

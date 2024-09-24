@@ -1,0 +1,10 @@
+#include "main.h"
+
+/**
+ * perform_raycasting - Executes the raycasting process to render the frame
+ */
+
+void perform_raycasting(void)
+{
+	draw_scene();
+}
