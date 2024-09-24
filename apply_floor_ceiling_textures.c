@@ -1,30 +1,24 @@
 #include "main.h"
 
 /**
- * apply_floor_ceiling_textures - Renders floor and ceiling textures
+ * apply_floor_ceiling_textures - Applies floor and ceiling textures to the scene
  */
-
 void apply_floor_ceiling_textures(void)
 {
-	int y;
-	for (y = 0; y < SCREEN_HEIGHT / 2; y++)
-	{
-		int p = y - SCREEN_HEIGHT / 2;
-		double rowDistance = SCREEN_HEIGHT / (2.0 * y - SCREEN_HEIGHT);
-		double floorX = posX + rowDistance * dirX;
-		double floorY = posY + rowDistance * dirY;
+    SDL_Rect floorDest, ceilingDest;
+    SDL_Rect floorSrc = {0, 0, 64, 64}; // Assuming 64x64 texture
+    SDL_Rect ceilingSrc = {0, 0, 64, 64};
 
-		int cellX = (int)floorX;
-		int cellY = (int)floorY;
+    floorDest.x = 0;
+    floorDest.y = 500; // Example height
+    floorDest.w = 640;
+    floorDest.h = 240;
 
-		int tx = (int)(64 * (floorX - cellX)) & (64 - 1);
-		int ty = (int)(64 * (floorY - cellY)) & (64 - 1);
+    ceilingDest.x = 0;
+    ceilingDest.y = 0;
+    ceilingDest.w = 640;
+    ceilingDest.h = 240;
 
-		SDL_Rect floorSrc = { tx, ty, 1, 1 };
-		SDL_Rect floorDest = { y, SCREEN_HEIGHT / 2 + p, 1, 1 };
-		SDL_Rect ceilingDest = { y, SCREEN_HEIGHT / 2 - p, 1, 1 };
-
-		SDL_RenderCopy(gRenderer, floorTexture, &floorSrc, &floorDest);
-		SDL_RenderCopy(gRenderer, ceilingTexture, &floorSrc, &ceilingDest);
-	}
+    SDL_RenderCopy(gRenderer, floorTexture, &floorSrc, &floorDest);
+    SDL_RenderCopy(gRenderer, ceilingTexture, &ceilingSrc, &ceilingDest);
 }
