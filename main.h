@@ -34,7 +34,7 @@ void rotate_camera(const Uint8 *keystate);
 void move_camera(const Uint8 *keystate);
 int parse_map(const char *filename);
 SDL_Texture *load_texture(const char *file);
-int load_textures(void);
+void load_textures(void);
 void render_floor_ceiling(void);
 void draw_scene(void);
 int handle_collisions(double newX, double newY);
